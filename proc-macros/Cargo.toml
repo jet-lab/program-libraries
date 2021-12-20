@@ -1,0 +1,18 @@
+[package]
+name = "jet-proto-proc-macros"
+version = "1.0.0"
+edition = "2021"
+
+description = "A library of proc macros for helping with writing solana programs"
+license = "AGPL-3.0-or-later"
+homepage = "https://jetprotocol.io"
+repository = "https://github.com/jet-lab/program-libraries"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = {version="1.0.57",features=["full","fold"]}
+quote = "1.0.8"
+static_assertions = "1.1.0"
+proc-macro2 = "1.0"
