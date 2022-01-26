@@ -1,5 +1,3 @@
-extern crate static_assertions;
-
 use proc_macro::TokenStream;
 
 mod mem;
@@ -19,5 +17,5 @@ mod mem;
 /// #[assert_size(aligns, 128)
 #[proc_macro_attribute]
 pub fn assert_size(args: TokenStream, input_struct: TokenStream) -> TokenStream {
-    mem::handler(args, input_struct)
+    mem::handler(args.into(), input_struct.into()).into()
 }

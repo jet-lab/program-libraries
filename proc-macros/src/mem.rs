@@ -1,6 +1,6 @@
-use proc_macro::TokenStream;
+use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
-use syn::{ItemEnum, ItemStruct};
+use syn::{Ident, ItemEnum, ItemStruct};
 
 use proc_macro2;
 
@@ -23,7 +23,7 @@ pub fn handler(args: TokenStream, input: TokenStream) -> TokenStream {
 
 macro_rules! parse {
     ($input:ident as $type:ty) => {
-        syn::parse::<$type>($input.clone()).map(|s| (s.ident.clone(), s.to_token_stream()))
+        syn::parse::<$type>($input.clone().into()).map(|s| (s.ident.clone(), s.to_token_stream()))
     };
 }
 use parse;
@@ -49,7 +49,7 @@ enum Constraint {
     Size(usize),
 }
 
-fn to_token(constraint: &Constraint, name: &proc_macro2::Ident) -> proc_macro2::TokenStream {
+fn to_token(constraint: &Constraint, name: &Ident) -> proc_macro2::TokenStream {
     match constraint {
         Constraint::Aligns => quote! {
             static_assertions::const_assert_eq!(0, std::mem::size_of::<#name>() % 8);
