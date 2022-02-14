@@ -1,5 +1,7 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
+use bytemuck::{Pod, Zeroable};
+
 const PRECISION: i32 = 10;
 const ONE: i128 = 10_000_000_000;
 
@@ -20,7 +22,8 @@ const POWERS_OF_TEN: &'static [i128] = &[
 ];
 
 /// A fixed-point decimal number 128 bits wide
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Pod, Zeroable, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[repr(transparent)]
 pub struct Number128(i128);
 
 impl Number128 {
