@@ -156,8 +156,7 @@ impl Mul<Number128> for Number128 {
 
 impl MulAssign<Number128> for Number128 {
     fn mul_assign(&mut self, rhs: Number128) {
-        i128::from_le_bytes(self.0).mul_assign(i128::from_le_bytes(rhs.0));
-        i128::from_le_bytes(self.0).div_assign(ONE);
+        self.0 = (i128::from_le_bytes(self.0) * i128::from_le_bytes(rhs.0) / ONE).to_le_bytes();
     }
 }
 
@@ -176,8 +175,7 @@ impl Div<Number128> for Number128 {
 
 impl DivAssign<Number128> for Number128 {
     fn div_assign(&mut self, rhs: Number128) {
-        i128::from_le_bytes(self.0).mul_assign(ONE);
-        i128::from_le_bytes(self.0).div_assign(i128::from_le_bytes(rhs.0));
+        self.0 = (i128::from_le_bytes(self.0) * ONE / i128::from_le_bytes(rhs.0)).to_le_bytes();
     }
 }
 
@@ -248,5 +246,36 @@ mod tests {
             Number128::from_decimal(3, 1),
             Number128::from_decimal(1, 1) * 3u64
         )
+    }
+
+    #[test]
+    fn test_add_assign_101_2() {
+        let mut a = Number128::from_decimal(101, 0);
+        a += Number128::from_decimal(2, 0);
+        assert_eq!(Number128::from_decimal(103, 0), a);
+    }
+
+    #[test]
+    fn test_sub_assign_101_2() {
+        let mut a = Number128::from_decimal(101, 0);
+        a -= Number128::from_decimal(2, 0);
+        assert_eq!(Number128::from_decimal(99, 0), a);
+    }
+
+    #[test]
+    fn test_mul_assign_101_2() {
+        let mut a = Number128::from_decimal(101, 0);
+        a *= Number128::from_decimal(2, 0);
+        assert_eq!(
+            i128::from_le_bytes(Number128::from_decimal(202, 0).0),
+            i128::from_le_bytes(a.0)
+        );
+    }
+
+    #[test]
+    fn test_div_assign_101_2() {
+        let mut a = Number128::from_decimal(101, 0);
+        a /= Number128::from_decimal(2, 0);
+        assert_eq!(Number128::from_decimal(505, -1), a);
     }
 }
