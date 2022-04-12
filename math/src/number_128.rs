@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
 use bytemuck::{Pod, Zeroable};
@@ -22,7 +23,7 @@ const POWERS_OF_TEN: &'static [i128] = &[
 ];
 
 /// A fixed-point decimal number 128 bits wide
-#[derive(Pod, Zeroable, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Pod, Zeroable, Debug, Copy, Clone, Eq, PartialEq)]
 #[repr(C)]
 pub struct Number128([u8; 16]);
 
@@ -176,6 +177,18 @@ impl Div<Number128> for Number128 {
 impl DivAssign<Number128> for Number128 {
     fn div_assign(&mut self, rhs: Number128) {
         self.0 = (i128::from_le_bytes(self.0) * ONE / i128::from_le_bytes(rhs.0)).to_le_bytes();
+    }
+}
+
+impl PartialOrd for Number128 {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        i128::from_le_bytes(self.0).partial_cmp(&i128::from_le_bytes(other.0))
+    }
+}
+
+impl Ord for Number128 {
+    fn cmp(&self, other: &Self) -> Ordering {
+        i128::from_le_bytes(self.0).cmp(&i128::from_le_bytes(other.0))
     }
 }
 
