@@ -79,7 +79,7 @@ impl std::fmt::Display for Number128 {
         let rem = i128::from_le_bytes(self.0) % ONE;
         let decimal_digits = PRECISION as usize;
         let rem_str = rem.to_string();
-        // regular padding like {:010} doesn't work with U192
+        // regular padding like {:010} doesn't work with i128
         let decimals = "0".repeat(decimal_digits - rem_str.len()) + &*rem_str;
         let stripped_decimals = decimals.trim_end_matches('0');
         let pretty_decimals = if stripped_decimals.is_empty() {
@@ -254,6 +254,27 @@ mod tests {
     }
 
     #[test]
+    fn comparison() {
+        let a = Number128::from_decimal(1000, -4);
+        let b = Number128::from_decimal(10, -2);
+        assert!(a >= b);
+
+        let c = Number128::from_decimal(1001, -4);
+        assert!(c > a);
+        assert!(c > b);
+
+        let d = Number128::from_decimal(9999999, -8);
+        assert!(d < a);
+        assert!(d < b);
+        assert!(d < c);
+        assert!(d <= d);
+
+        assert_eq!(a.cmp(&b), std::cmp::Ordering::Equal);
+        assert_eq!(a.cmp(&c), std::cmp::Ordering::Less);
+        assert_eq!(a.cmp(&d), std::cmp::Ordering::Greater);
+    }
+
+    #[test]
     fn multiply_by_u64() {
         assert_eq!(
             Number128::from_decimal(3, 1),
@@ -290,5 +311,82 @@ mod tests {
         let mut a = Number128::from_decimal(101, 0);
         a /= Number128::from_decimal(2, 0);
         assert_eq!(Number128::from_decimal(505, -1), a);
+    }
+
+    #[test]
+    fn test_div_assign_102_3() {
+        let mut a = Number128::from_decimal(1, 1);
+        dbg!(i128::from_le_bytes(a.0));
+        a /= Number128::from_decimal(100, 0);
+        assert_eq!(
+            i128::from_le_bytes(Number128::from_decimal(1, -1).0),
+            i128::from_le_bytes(a.0)
+        );
+    }
+
+    #[test]
+    fn div_into_i128() {
+        let a = Number128::from_decimal(1000, 0);
+        let b = a / 500;
+        assert_eq!(Number128::from_decimal(2, 0), b);
+
+        let c = Number128::from_decimal(1000, -3);
+        let d = c / 3;
+        assert_eq!(
+            i128::from_le_bytes(Number128::from_decimal(3333333333i64, -10).0),
+            i128::from_le_bytes(d.0)
+        );
+    }
+
+    #[test]
+    fn equality() {
+        let a = Number128::from_decimal(1000, -4);
+        let b = Number128::from_decimal(10, -2);
+        assert_eq!(a, b);
+
+        let c = Number128::from_decimal(-1000, -4);
+        assert_ne!(a, c);
+        assert_ne!(b, c);
+    }
+
+    #[test]
+    fn as_u64() {
+        let u64in = 31455;
+        let a = Number128::from_decimal(u64in, -3);
+        let b = a.as_u64(-3);
+        assert_eq!(b, u64in);
+    }
+
+    #[test]
+    #[should_panic = "cannot convert to u64 because value < 0"]
+    fn as_u64_panic_neg() {
+        let a = Number128::from_decimal(-10000, -3);
+        a.as_u64(-3);
+    }
+
+    #[test]
+    #[should_panic = "cannot convert to u64 due to overflow"]
+    fn as_u64_panic_big() {
+        let a = Number128::from_decimal(u64::MAX as i128 + 1, -3);
+        a.as_u64(-3);
+    }
+
+    #[test]
+    fn display() {
+        let a = Number128::from_bps(15000);
+        assert_eq!("1.5", a.to_string().as_str());
+
+        let b = Number128::from_decimal(12345678901i128, -10);
+        assert_eq!("1.2345678901", b.to_string().as_str());
+
+        let c = Number128::from_decimal(12345678901i128, -9);
+        assert_eq!("12.345678901", c.to_string().as_str());
+
+        let d = Number128::from_decimal(ONE - 1, 1);
+        assert_eq!("99999999990.0", d.to_string().as_str());
+
+        // FIXME: this seems to return an incorrectly formatted number
+        // let c = Number128::from_decimal(12345678901i128, -13);
+        // assert_eq!("0.0012345678901", c.to_string().as_str());
     }
 }
