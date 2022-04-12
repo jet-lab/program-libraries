@@ -23,12 +23,12 @@ const POWERS_OF_TEN: &'static [i128] = &[
 
 /// A fixed-point decimal number 128 bits wide
 #[derive(Pod, Zeroable, Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
-#[repr(transparent)]
-pub struct Number128(i128);
+#[repr(C)]
+pub struct Number128([u8; 16]);
 
 impl Number128 {
-    pub const ONE: Self = Self(ONE);
-    pub const ZERO: Self = Self(0);
+    pub const ONE: Self = Self(ONE.to_le_bytes());
+    pub const ZERO: Self = Self(0i128.to_le_bytes());
 
     /// Convert this number to fit in a u64
     ///
@@ -42,7 +42,7 @@ impl Number128 {
             prec_value = ONE / prec_value;
         }
 
-        let target_value = self.0 / prec_value;
+        let target_value = i128::from_le_bytes(self.0) / prec_value;
         if target_value > std::u64::MAX as i128 {
             panic!("cannot convert to u64 due to overflow");
         }
@@ -63,7 +63,7 @@ impl Number128 {
             prec_value = ONE / prec_value;
         }
 
-        Self(value.into() * prec_value)
+        Self((value.into() * prec_value).to_le_bytes())
     }
 
     /// Convert from basis points
@@ -75,7 +75,7 @@ impl Number128 {
 impl std::fmt::Display for Number128 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // todo optimize
-        let rem = self.0 % ONE;
+        let rem = i128::from_le_bytes(self.0) % ONE;
         let decimal_digits = PRECISION as usize;
         let rem_str = rem.to_string();
         // regular padding like {:010} doesn't work with U192
@@ -86,10 +86,10 @@ impl std::fmt::Display for Number128 {
         } else {
             stripped_decimals
         };
-        if self.0 < ONE {
+        if i128::from_le_bytes(self.0) < ONE {
             write!(f, "0.{}", pretty_decimals)?;
         } else {
-            let int = self.0 / ONE;
+            let int = i128::from_le_bytes(self.0) / ONE;
             write!(f, "{}.{}", int, pretty_decimals)?;
         }
         Ok(())
@@ -100,13 +100,21 @@ impl Add<Number128> for Number128 {
     type Output = Self;
 
     fn add(self, rhs: Number128) -> Self::Output {
-        Self(self.0.checked_add(rhs.0).unwrap())
+        Self(
+            (i128::from_le_bytes(self.0)
+                .checked_add(i128::from_le_bytes(rhs.0))
+                .unwrap())
+            .to_le_bytes(),
+        )
     }
 }
 
 impl AddAssign<Number128> for Number128 {
     fn add_assign(&mut self, rhs: Number128) {
-        self.0 = self.0.checked_add(rhs.0).unwrap();
+        self.0 = (i128::from_le_bytes(self.0)
+            .checked_add(i128::from_le_bytes(rhs.0))
+            .unwrap())
+        .to_le_bytes();
     }
 }
 
@@ -114,13 +122,21 @@ impl Sub<Number128> for Number128 {
     type Output = Self;
 
     fn sub(self, rhs: Number128) -> Self::Output {
-        Self(self.0.checked_sub(rhs.0).unwrap())
+        Self(
+            (i128::from_le_bytes(self.0)
+                .checked_sub(i128::from_le_bytes(rhs.0))
+                .unwrap())
+            .to_le_bytes(),
+        )
     }
 }
 
 impl SubAssign<Number128> for Number128 {
     fn sub_assign(&mut self, rhs: Number128) {
-        self.0 = self.0.checked_sub(rhs.0).unwrap();
+        self.0 = (i128::from_le_bytes(self.0)
+            .checked_sub(i128::from_le_bytes(rhs.0))
+            .unwrap())
+        .to_le_bytes();
     }
 }
 
@@ -128,14 +144,19 @@ impl Mul<Number128> for Number128 {
     type Output = Number128;
 
     fn mul(self, rhs: Number128) -> Self::Output {
-        Self(self.0.checked_mul(rhs.0).unwrap().div(ONE))
+        Self(
+            (i128::from_le_bytes(self.0)
+                .checked_mul(i128::from_le_bytes(rhs.0))
+                .unwrap()
+                .div(ONE))
+            .to_le_bytes(),
+        )
     }
 }
 
 impl MulAssign<Number128> for Number128 {
     fn mul_assign(&mut self, rhs: Number128) {
-        self.0.mul_assign(rhs.0);
-        self.0.div_assign(ONE);
+        self.0 = (i128::from_le_bytes(self.0) * i128::from_le_bytes(rhs.0) / ONE).to_le_bytes();
     }
 }
 
@@ -143,14 +164,18 @@ impl Div<Number128> for Number128 {
     type Output = Number128;
 
     fn div(self, rhs: Number128) -> Self::Output {
-        Self(self.0.mul(ONE).div(rhs.0))
+        Self(
+            (i128::from_le_bytes(self.0)
+                .mul(ONE)
+                .div(i128::from_le_bytes(rhs.0)))
+            .to_le_bytes(),
+        )
     }
 }
 
 impl DivAssign<Number128> for Number128 {
     fn div_assign(&mut self, rhs: Number128) {
-        self.0.mul_assign(ONE);
-        self.0.div_assign(rhs.0);
+        self.0 = (i128::from_le_bytes(self.0) * ONE / i128::from_le_bytes(rhs.0)).to_le_bytes();
     }
 }
 
@@ -158,7 +183,7 @@ impl<T: Into<i128>> Mul<T> for Number128 {
     type Output = Number128;
 
     fn mul(self, rhs: T) -> Self::Output {
-        Self(self.0.mul(rhs.into()))
+        Self((i128::from_le_bytes(self.0).mul(rhs.into())).to_le_bytes())
     }
 }
 
@@ -166,7 +191,7 @@ impl<T: Into<i128>> Div<T> for Number128 {
     type Output = Number128;
 
     fn div(self, rhs: T) -> Self::Output {
-        Self(self.0.div(rhs.into()))
+        Self((i128::from_le_bytes(self.0).div(rhs.into())).to_le_bytes())
     }
 }
 
@@ -221,5 +246,36 @@ mod tests {
             Number128::from_decimal(3, 1),
             Number128::from_decimal(1, 1) * 3u64
         )
+    }
+
+    #[test]
+    fn test_add_assign_101_2() {
+        let mut a = Number128::from_decimal(101, 0);
+        a += Number128::from_decimal(2, 0);
+        assert_eq!(Number128::from_decimal(103, 0), a);
+    }
+
+    #[test]
+    fn test_sub_assign_101_2() {
+        let mut a = Number128::from_decimal(101, 0);
+        a -= Number128::from_decimal(2, 0);
+        assert_eq!(Number128::from_decimal(99, 0), a);
+    }
+
+    #[test]
+    fn test_mul_assign_101_2() {
+        let mut a = Number128::from_decimal(101, 0);
+        a *= Number128::from_decimal(2, 0);
+        assert_eq!(
+            i128::from_le_bytes(Number128::from_decimal(202, 0).0),
+            i128::from_le_bytes(a.0)
+        );
+    }
+
+    #[test]
+    fn test_div_assign_101_2() {
+        let mut a = Number128::from_decimal(101, 0);
+        a /= Number128::from_decimal(2, 0);
+        assert_eq!(Number128::from_decimal(505, -1), a);
     }
 }
