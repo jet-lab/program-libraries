@@ -37,13 +37,14 @@ impl Number {
     /// exponent provided.
     pub fn as_u64(&self, exponent: impl Into<i32>) -> u64 {
         let extra_precision = PRECISION + exponent.into();
-        let mut prec_value = Self::ten_pow(extra_precision.abs() as u32);
+        let prec_value = Self::ten_pow(extra_precision.abs() as u32);
 
-        if extra_precision < 0 {
-            prec_value = ONE / prec_value;
-        }
+        let target_value = if extra_precision < 0 {
+            self.0 * prec_value
+        } else {
+            self.0 / prec_value
+        };
 
-        let target_value = self.0 / prec_value;
         if target_value > U64_MAX {
             panic!("cannot convert to u64 due to overflow");
         }
@@ -60,13 +61,14 @@ impl Number {
     /// target precision.
     pub fn as_u64_ceil(&self, exponent: impl Into<i32>) -> u64 {
         let extra_precision = PRECISION + exponent.into();
-        let mut prec_value = Self::ten_pow(extra_precision.abs() as u32);
+        let prec_value = Self::ten_pow(extra_precision.abs() as u32);
 
-        if extra_precision < 0 {
-            prec_value = ONE / prec_value;
-        }
-
-        let target_value = (prec_value - U192::from(1) + self.0) / prec_value;
+        let target_rounded = prec_value - U192::from(1) + self.0;
+        let target_value = if extra_precision < 0 {
+            target_rounded * prec_value
+        } else {
+            target_rounded / prec_value
+        };
 
         if target_value > U64_MAX {
             panic!("cannot convert to u64 due to overflow");
@@ -84,18 +86,20 @@ impl Number {
     /// target precision.
     pub fn as_u64_rounded(&self, exponent: impl Into<i32>) -> u64 {
         let extra_precision = PRECISION + exponent.into();
-        let mut prec_value = Self::ten_pow(extra_precision.abs() as u32);
-
-        if extra_precision < 0 {
-            prec_value = ONE / prec_value;
-        }
+        let prec_value = Self::ten_pow(extra_precision.abs() as u32);
 
         let rounding = match extra_precision > 0 {
             true => U192::from(1) * prec_value / 2,
             false => U192::zero(),
         };
 
-        let target_value = (rounding + self.0) / prec_value;
+        let target_rounded = rounding + self.0;
+        let target_value = if extra_precision < 0 {
+            target_rounded * prec_value
+        } else {
+            target_rounded / prec_value
+        };
+
         if target_value > U64_MAX {
             panic!("cannot convert to u64 due to overflow");
         }
@@ -106,13 +110,13 @@ impl Number {
     /// Convert another integer into a `Number`.
     pub fn from_decimal(value: impl Into<U192>, exponent: impl Into<i32>) -> Self {
         let extra_precision = PRECISION + exponent.into();
-        let mut prec_value = Self::ten_pow(extra_precision.abs() as u32);
+        let prec_value = Self::ten_pow(extra_precision.abs() as u32);
 
         if extra_precision < 0 {
-            prec_value = ONE / prec_value;
+            Self(value.into() / prec_value)
+        } else {
+            Self(value.into() * prec_value)
         }
-
-        Self(value.into() * prec_value)
     }
 
     /// Convert from basis points into a `Number`
@@ -161,6 +165,17 @@ impl Number {
         };
 
         value.into()
+    }
+
+    /// Get the underlying 128-bit representation
+    pub fn into_bits(self) -> [u8; 24] {
+        unsafe { std::mem::transmute(self.0 .0) }
+    }
+
+    /// Read a number from a raw 128-bit representation, which was previously
+    /// returned by a call to `into_bits`.
+    pub fn from_bits(bits: [u8; 24]) -> Self {
+        Self(U192(unsafe { std::mem::transmute(bits) }))
     }
 }
 
@@ -360,5 +375,13 @@ mod tests {
         assert_eq!("1000.0", Number::from(1000).to_string());
         assert_eq!("1.0", Number::from(1).to_string());
         assert_eq!("0.001", Number::from_decimal(1, -3).to_string());
+    }
+
+    #[test]
+    fn into_bits() {
+        let bits = Number::from_decimal(1242, -3).into_bits();
+        let number = Number::from_bits(bits);
+
+        assert_eq!(Number::from_decimal(1242, -3), number);
     }
 }

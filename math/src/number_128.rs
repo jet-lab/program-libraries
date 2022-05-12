@@ -36,13 +36,14 @@ impl Number128 {
     /// exponent provided.
     pub fn as_u64(&self, exponent: impl Into<i32>) -> u64 {
         let extra_precision = PRECISION + exponent.into();
-        let mut prec_value = POWERS_OF_TEN[extra_precision.abs() as usize];
+        let prec_value = POWERS_OF_TEN[extra_precision.abs() as usize];
 
-        if extra_precision < 0 {
-            prec_value = ONE / prec_value;
-        }
+        let target_value = if extra_precision < 0 {
+            self.0 * prec_value
+        } else {
+            self.0 / prec_value
+        };
 
-        let target_value = self.0 / prec_value;
         if target_value > std::u64::MAX as i128 {
             panic!("cannot convert to u64 due to overflow");
         }
@@ -57,18 +58,29 @@ impl Number128 {
     /// Convert another integer
     pub fn from_decimal(value: impl Into<i128>, exponent: impl Into<i32>) -> Self {
         let extra_precision = PRECISION + exponent.into();
-        let mut prec_value = POWERS_OF_TEN[extra_precision.abs() as usize];
+        let prec_value = POWERS_OF_TEN[extra_precision.abs() as usize];
 
         if extra_precision < 0 {
-            prec_value = ONE / prec_value;
+            Self(value.into() / prec_value)
+        } else {
+            Self(value.into() * prec_value)
         }
-
-        Self(value.into() * prec_value)
     }
 
     /// Convert from basis points
     pub fn from_bps(basis_points: u16) -> Self {
         Self::from_decimal(basis_points, crate::BPS_EXPONENT)
+    }
+
+    /// Get the underlying 128-bit representation
+    pub fn into_bits(self) -> i128 {
+        self.0
+    }
+
+    /// Read a number from a raw 128-bit representation, which was previously
+    /// returned by a call to `into_bits`.
+    pub fn from_bits(bits: i128) -> Self {
+        Self(bits)
     }
 }
 
@@ -335,8 +347,15 @@ mod tests {
         let d = Number128::from_decimal(ONE - 1, 1);
         assert_eq!("99999999990.0", d.to_string().as_str());
 
-        // FIXME: this seems to return an incorrectly formatted number
-        // let c = Number128::from_decimal(12345678901i128, -13);
-        // assert_eq!("0.0012345678901", c.to_string().as_str());
+        let c = Number128::from_decimal(12345678901i128, -13);
+        assert_eq!("0.0012345678", c.to_string().as_str());
+    }
+
+    #[test]
+    fn into_bits() {
+        let bits = Number128::from_decimal(1242, -3).into_bits();
+        let number = Number128::from_bits(bits);
+
+        assert_eq!(Number128::from_decimal(1242, -3), number);
     }
 }
