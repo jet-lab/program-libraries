@@ -23,7 +23,7 @@ const POWERS_OF_TEN: &[i128] = &[
 
 /// A fixed-point decimal number 128 bits wide
 #[derive(Pod, Zeroable, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-#[repr(C, align(8))]
+#[repr(C)]
 pub struct Number128(i128);
 
 impl Number128 {
@@ -72,15 +72,33 @@ impl Number128 {
         Self::from_decimal(basis_points, crate::BPS_EXPONENT)
     }
 
-    /// Get the underlying 128-bit representation
-    pub fn into_bits(self) -> i128 {
-        self.0
+    /// Get the underlying 128-bit representation in bytes.
+    /// Uses the target endianness of the caller
+    pub fn into_bits(self) -> [u8; 16] {
+        #[cfg(target_endian = "little")]
+        return self.0.to_le_bytes();
+        #[cfg(target_endian = "big")]
+        self.0.to_be_bytes()
     }
 
     /// Read a number from a raw 128-bit representation, which was previously
     /// returned by a call to `into_bits`.
-    pub fn from_bits(bits: i128) -> Self {
-        Self(bits)
+    /// Uses the target endianness of the caller
+    pub fn from_bits(bits: [u8; 16]) -> Self {
+        #[cfg(target_endian = "little")]
+        return Self(i128::from_le_bytes(bits));
+        #[cfg(target_endian = "big")]
+        Self(i128::from_be_bytes(bits))
+    }
+
+    /// Get the underlying i128 value
+    pub fn to_i128(self) -> i128 {
+        self.0
+    }
+
+    /// Create `Number128` from an `i128`
+    pub fn from_i128(value: i128) -> Self {
+        Self(value)
     }
 }
 
