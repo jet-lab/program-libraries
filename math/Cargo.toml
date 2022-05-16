@@ -1,6 +1,6 @@
 [package]
 name = "jet-proto-math"
-version = "1.0.4"
+version = "1.0.5"
 edition = "2018"
 
 description = "A library of math helpers suitable for use in solana programs"

@@ -75,20 +75,14 @@ impl Number128 {
     /// Get the underlying 128-bit representation in bytes.
     /// Uses the target endianness of the caller
     pub fn into_bits(self) -> [u8; 16] {
-        #[cfg(target_endian = "little")]
-        return self.0.to_le_bytes();
-        #[cfg(target_endian = "big")]
-        self.0.to_be_bytes()
+        self.0.to_ne_bytes()
     }
 
     /// Read a number from a raw 128-bit representation, which was previously
     /// returned by a call to `into_bits`.
     /// Uses the target endianness of the caller
     pub fn from_bits(bits: [u8; 16]) -> Self {
-        #[cfg(target_endian = "little")]
-        return Self(i128::from_le_bytes(bits));
-        #[cfg(target_endian = "big")]
-        Self(i128::from_be_bytes(bits))
+        Self(i128::from_ne_bytes(bits))
     }
 
     /// Get the underlying i128 value
