@@ -167,12 +167,12 @@ impl Number {
         value.into()
     }
 
-    /// Get the underlying 128-bit representation
+    /// Get the underlying representation in bits
     pub fn into_bits(self) -> [u8; 24] {
         unsafe { std::mem::transmute(self.0 .0) }
     }
 
-    /// Read a number from a raw 128-bit representation, which was previously
+    /// Read a number from a raw 196-bit representation, which was previously
     /// returned by a call to `into_bits`.
     pub fn from_bits(bits: [u8; 24]) -> Self {
         Self(U192(unsafe { std::mem::transmute(bits) }))
