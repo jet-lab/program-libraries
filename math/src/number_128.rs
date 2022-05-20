@@ -101,7 +101,8 @@ impl std::fmt::Display for Number128 {
         // todo optimize
         let rem = self.0 % ONE;
         let decimal_digits = PRECISION as usize;
-        let rem_str = rem.to_string();
+        // convert to abs to remove sign
+        let rem_str = rem.abs().to_string();
         // regular padding like {:010} doesn't work with i128
         let decimals = "0".repeat(decimal_digits - rem_str.len()) + &*rem_str;
         let stripped_decimals = decimals.trim_end_matches('0');
@@ -110,7 +111,12 @@ impl std::fmt::Display for Number128 {
         } else {
             stripped_decimals
         };
-        if self.0 < ONE {
+        if self.0 < -ONE {
+            let int = self.0 / ONE;
+            write!(f, "{}.{}", int, pretty_decimals)?;
+        } else if self.0 < 0 {
+            write!(f, "-0.{}", pretty_decimals)?;
+        } else if self.0 < ONE {
             write!(f, "0.{}", pretty_decimals)?;
         } else {
             let int = self.0 / ONE;
@@ -350,8 +356,17 @@ mod tests {
         let a = Number128::from_bps(15000);
         assert_eq!("1.5", a.to_string().as_str());
 
+        let a = Number128::from_bps(0) - Number128::from_bps(15000);
+        assert_eq!("-1.5", a.to_string().as_str());
+
         let b = Number128::from_decimal(12345678901i128, -10);
         assert_eq!("1.2345678901", b.to_string().as_str());
+
+        let b = Number128::from_decimal(-12345678901i128, -10);
+        assert_eq!("-1.2345678901", b.to_string().as_str());
+
+        let c = Number128::from_decimal(-12345678901i128, -9);
+        assert_eq!("-12.345678901", c.to_string().as_str());
 
         let c = Number128::from_decimal(12345678901i128, -9);
         assert_eq!("12.345678901", c.to_string().as_str());
@@ -359,8 +374,11 @@ mod tests {
         let d = Number128::from_decimal(ONE - 1, 1);
         assert_eq!("99999999990.0", d.to_string().as_str());
 
-        let c = Number128::from_decimal(12345678901i128, -13);
-        assert_eq!("0.0012345678", c.to_string().as_str());
+        let e = Number128::from_decimal(12345678901i128, -13);
+        assert_eq!("0.0012345678", e.to_string().as_str());
+
+        let e = Number128::from_decimal(-12345678901i128, -13);
+        assert_eq!("-0.0012345678", e.to_string().as_str());
     }
 
     #[test]
