@@ -1,6 +1,8 @@
 mod functions;
 mod number;
 mod number_128;
+
+#[cfg(feature = "traits")]
 pub mod traits;
 
 #[doc(inline)]
