@@ -16,3 +16,6 @@ uint = "0.8"
 thiserror = "1.0.20"
 bytemuck = { version = "1.7", features = ["derive"] }
 static_assertions = "1.1.0"
+num-traits = "0.2"
+
+anchor-lang = { git = "https://github.com/jet-lab/anchor", branch = "master" }
