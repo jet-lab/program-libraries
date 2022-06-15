@@ -1,7 +1,6 @@
 use anchor_lang::{error, error_code, prelude::Result};
 use num_traits::{CheckedAdd, CheckedDiv, CheckedMul, CheckedSub};
 
-
 #[error_code]
 pub enum NumericalError {
     #[msg("overflow on checked add")]
