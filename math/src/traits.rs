@@ -16,18 +16,18 @@ pub enum NumericalError {
 }
 
 pub trait TryAddAssign: CheckedAdd {
-    fn try_add_assign(&mut self, amount: Self) -> Result<()> {
+    fn try_add_assign(&mut self, amount: impl Into<Self>) -> Result<()> {
         *self = self
-            .checked_add(&amount)
+            .checked_add(&amount.into())
             .ok_or_else(|| error!(NumericalError::AdditionOverflow))?;
         Ok(())
     }
 }
 
 pub trait TrySubAssign: CheckedSub {
-    fn try_sub_assign(&mut self, amount: Self) -> Result<()> {
+    fn try_sub_assign(&mut self, amount: impl Into<Self>) -> Result<()> {
         *self = self
-            .checked_sub(&amount)
+            .checked_sub(&amount.into())
             .ok_or_else(|| error!(NumericalError::SubtractionUnderflow))?;
         Ok(())
     }
@@ -45,13 +45,9 @@ impl<T: Into<U192>> ToNumber for T {
     }
 }
 
-pub trait NumberAddAssign {
-    fn try_number_add_assign(&mut self, amount: impl Into<Number>) -> Result<()>;
-}
-
-impl NumberAddAssign for [u8; 24] {
+pub trait NumberAddAssign: Into<U192> + From<Number> + Clone {
     fn try_number_add_assign(&mut self, amount: impl Into<Number>) -> Result<()> {
-        *self = Number::from_bits(*self)
+        *self = Number::from(self.clone())
             .checked_add(&amount.into())
             .ok_or_else(|| error!(NumericalError::AdditionOverflow))?
             .into();
@@ -60,42 +56,42 @@ impl NumberAddAssign for [u8; 24] {
     }
 }
 
-pub trait NumberSubAssign {
-    fn try_number_sub_assign(&mut self, amount: impl Into<Number>) -> Result<()>;
-}
+impl<T: Into<U192> + From<Number> + Clone> NumberAddAssign for T {}
 
-impl NumberSubAssign for [u8; 24] {
+pub trait NumberSubAssign: Into<U192> + From<Number> + Clone {
     fn try_number_sub_assign(&mut self, amount: impl Into<Number>) -> Result<()> {
-        *self = Number::from_bits(*self)
+        *self = Number::from(self.clone())
             .checked_sub(&amount.into())
-            .ok_or_else(|| error!(NumericalError::SubtractionUnderflow))?
+            .ok_or_else(|| error!(NumericalError::AdditionOverflow))?
             .into();
 
         Ok(())
     }
 }
 
+impl<T: Into<U192> + From<Number> + Clone> NumberSubAssign for T {}
+
 pub trait SafeAdd: CheckedAdd {
-    fn safe_add(&self, amount: Self) -> Result<Self> {
-        self.checked_add(&amount)
+    fn safe_add(&self, amount: impl Into<Self>) -> Result<Self> {
+        self.checked_add(&amount.into())
             .ok_or_else(|| error!(NumericalError::AdditionOverflow))
     }
 }
 pub trait SafeDiv: CheckedDiv {
-    fn safe_div(&self, amount: Self) -> Result<Self> {
-        self.checked_div(&amount)
+    fn safe_div(&self, amount: impl Into<Self>) -> Result<Self> {
+        self.checked_div(&amount.into())
             .ok_or_else(|| error!(NumericalError::ZeroDivision))
     }
 }
 pub trait SafeMul: CheckedMul {
-    fn safe_mul(&self, amount: Self) -> Result<Self> {
-        self.checked_mul(&amount)
+    fn safe_mul(&self, amount: impl Into<Self>) -> Result<Self> {
+        self.checked_mul(&amount.into())
             .ok_or_else(|| error!(NumericalError::MultiplicationOverflow))
     }
 }
 pub trait SafeSub: CheckedSub {
-    fn safe_sub(&self, amount: Self) -> Result<Self> {
-        self.checked_sub(&amount)
+    fn safe_sub(&self, amount: impl Into<Self>) -> Result<Self> {
+        self.checked_sub(&amount.into())
             .ok_or_else(|| error!(NumericalError::SubtractionUnderflow))
     }
 }
