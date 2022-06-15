@@ -16,18 +16,18 @@ pub enum NumericalError {
 }
 
 pub trait TryAddAssign: CheckedAdd {
-    fn try_add_assign(&mut self, amount: impl Into<Self>) -> Result<()> {
+    fn try_add_assign(&mut self, amount: Self) -> Result<()> {
         *self = self
-            .checked_add(&amount.into())
+            .checked_add(&amount)
             .ok_or_else(|| error!(NumericalError::AdditionOverflow))?;
         Ok(())
     }
 }
 
 pub trait TrySubAssign: CheckedSub {
-    fn try_sub_assign(&mut self, amount: impl Into<Self>) -> Result<()> {
+    fn try_sub_assign(&mut self, amount: Self) -> Result<()> {
         *self = self
-            .checked_sub(&amount.into())
+            .checked_sub(&amount)
             .ok_or_else(|| error!(NumericalError::SubtractionUnderflow))?;
         Ok(())
     }
