@@ -18,7 +18,7 @@ construct_uint! {
 pub const BPS_EXPONENT: i32 = -4;
 const PRECISION: i32 = 15;
 const ONE: U192 = U192([1_000_000_000_000_000, 0, 0]);
-const U64_MAX: U192 = U192([0xffffffffffffffff, 0x0, 0x0]);
+const U64_MAX: U192 = U192([u64::MAX, 0x0, 0x0]);
 
 /// A large unsigned integer
 #[derive(Pod, Zeroable, Default, Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
@@ -28,8 +28,11 @@ pub struct Number(U192);
 static_assertions::const_assert_eq!(24, std::mem::size_of::<Number>());
 static_assertions::const_assert_eq!(0, std::mem::size_of::<Number>() % 8);
 impl Number {
-    pub const ONE: Number = Number(ONE);
-    pub const ZERO: Number = Number(U192::zero());
+    pub const ONE: Self = Self(ONE);
+    pub const ZERO: Self = Self(U192::zero());
+    pub const MAX: Self = Self(U192([u64::MAX, u64::MAX, u64::MAX]));
+    pub const MIN: Self = Self::ZERO;
+    pub const BITS: u32 = 192;
 
     /// Convert this number to fit in a u64
     ///

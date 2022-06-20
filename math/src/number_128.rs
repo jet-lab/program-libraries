@@ -29,6 +29,9 @@ pub struct Number128(i128);
 impl Number128 {
     pub const ONE: Self = Self(ONE);
     pub const ZERO: Self = Self(0i128);
+    pub const MAX: Self = Self(i128::MAX);
+    pub const MIN: Self = Self(i128::MIN);
+    pub const BITS: u32 = i128::BITS;
 
     /// Convert this number to fit in a u64
     ///
