@@ -187,7 +187,7 @@ impl<T: Into<U192>> From<T> for Number {
 
 impl From<Number> for [u8; 24] {
     fn from(n: Number) -> Self {
-        n.0.into()
+        n.into_bits()
     }
 }
 
@@ -411,5 +411,14 @@ mod tests {
         let number = Number::from_bits(bits);
 
         assert_eq!(Number::from_decimal(1242, -3), number);
+    }
+
+    #[test]
+    fn from_bits() {
+        let bits: [u8; 24] = {
+            let number: Number = 100.into();
+            number.into()
+        };
+        assert_eq!(Number::from_decimal(100, 0).into_bits(), bits);
     }
 }
