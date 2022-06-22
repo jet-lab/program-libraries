@@ -1,6 +1,7 @@
 //! Yet another decimal library
 
 use std::{
+    fmt::Debug,
     iter::Sum,
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign},
 };
@@ -21,7 +22,7 @@ const ONE: U192 = U192([1_000_000_000_000_000, 0, 0]);
 const U64_MAX: U192 = U192([u64::MAX, 0x0, 0x0]);
 
 /// A large unsigned integer
-#[derive(Pod, Zeroable, Default, Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Pod, Zeroable, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 #[repr(transparent)]
 pub struct Number(U192);
 
@@ -191,6 +192,12 @@ impl<T: Into<U192>> From<T> for Number {
 impl From<Number> for [u8; 24] {
     fn from(n: Number) -> Self {
         n.0.into()
+    }
+}
+
+impl Debug for Number {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        <Self as Display>::fmt(&self, f)
     }
 }
 

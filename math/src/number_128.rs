@@ -22,7 +22,7 @@ const POWERS_OF_TEN: &[i128] = &[
 ];
 
 /// A fixed-point decimal number 128 bits wide
-#[derive(Pod, Zeroable, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Pod, Zeroable, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(C)]
 pub struct Number128(i128);
 
@@ -96,6 +96,12 @@ impl Number128 {
     /// Create `Number128` from an `i128`
     pub fn from_i128(value: i128) -> Self {
         Self(value)
+    }
+}
+
+impl std::fmt::Debug for Number128 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        <Self as std::fmt::Display>::fmt(&self, f)
     }
 }
 
