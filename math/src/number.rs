@@ -3,7 +3,7 @@
 use std::{
     fmt::Debug,
     iter::Sum,
-    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign},
+    ops::{Add, AddAssign, Div, Mul, MulAssign, ShrAssign, Sub, SubAssign},
 };
 
 use bytemuck::{Pod, Zeroable};
@@ -18,7 +18,8 @@ construct_uint! {
 
 pub const BPS_EXPONENT: i32 = -4;
 const PRECISION: i32 = 15;
-const ONE: U192 = U192([1_000_000_000_000_000, 0, 0]);
+const ONE_SIZE: i32 = 50;
+const ONE: U192 = U192([1 << ONE_SIZE, 0, 0]);
 const U64_MAX: U192 = U192([u64::MAX, 0x0, 0x0]);
 
 /// A large unsigned integer
@@ -41,12 +42,11 @@ impl Number {
     /// exponent provided.
     pub fn as_u64(&self, exponent: impl Into<i32>) -> u64 {
         let extra_precision = PRECISION + exponent.into();
-        let prec_value = Self::ten_pow(extra_precision.abs() as u32);
 
         let target_value = if extra_precision < 0 {
-            self.0 * prec_value
+            self.0 << extra_precision
         } else {
-            self.0 / prec_value
+            self.0 >> extra_precision
         };
 
         if target_value > U64_MAX {
@@ -69,9 +69,9 @@ impl Number {
 
         let target_rounded = prec_value - U192::from(1) + self.0;
         let target_value = if extra_precision < 0 {
-            target_rounded * prec_value
+            target_rounded << extra_precision
         } else {
-            target_rounded / prec_value
+            target_rounded >> extra_precision
         };
 
         if target_value > U64_MAX {
@@ -90,18 +90,17 @@ impl Number {
     /// target precision.
     pub fn as_u64_rounded(&self, exponent: impl Into<i32>) -> u64 {
         let extra_precision = PRECISION + exponent.into();
-        let prec_value = Self::ten_pow(extra_precision.abs() as u32);
 
         let rounding = match extra_precision > 0 {
-            true => U192::from(1) * prec_value / 2,
+            true => U192::from(1) << extra_precision - 1,
             false => U192::zero(),
         };
 
         let target_rounded = rounding + self.0;
         let target_value = if extra_precision < 0 {
-            target_rounded * prec_value
+            target_rounded << extra_precision
         } else {
-            target_rounded / prec_value
+            target_rounded >> extra_precision
         };
 
         if target_value > U64_MAX {
@@ -266,14 +265,14 @@ impl Mul<Number> for Number {
     type Output = Number;
 
     fn mul(self, rhs: Number) -> Self::Output {
-        Self(self.0.mul(rhs.0).div(ONE))
+        Self(self.0.mul(rhs.0) >> ONE_SIZE)
     }
 }
 
 impl MulAssign<Number> for Number {
     fn mul_assign(&mut self, rhs: Number) {
         self.0.mul_assign(rhs.0);
-        self.0.div_assign(ONE);
+        self.0.shr_assign(ONE_SIZE);
     }
 }
 
@@ -281,7 +280,7 @@ impl Div<Number> for Number {
     type Output = Number;
 
     fn div(self, rhs: Number) -> Self::Output {
-        Self(self.0.mul(ONE).div(rhs.0))
+        Self((self.0 << ONE_SIZE).div(rhs.0))
     }
 }
 

@@ -1,9 +1,10 @@
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Shl, Shr, Sub, SubAssign};
 
 use bytemuck::{Pod, Zeroable};
 
 const PRECISION: i32 = 10;
-const ONE: i128 = 10_000_000_000;
+const ONE_SIZE: i32 = 33;
+const ONE: i128 = 1 << ONE_SIZE;
 
 const POWERS_OF_TEN: &[i128] = &[
     1,
@@ -19,6 +20,50 @@ const POWERS_OF_TEN: &[i128] = &[
     10_000_000_000,
     100_000_000_000,
     1_000_000_000_000,
+];
+
+const POWERS_OF_TWO: &[i128] = &[
+    1 << 0,
+    1 << 1,
+    1 << 2,
+    1 << 3,
+    1 << 4,
+    1 << 5,
+    1 << 6,
+    1 << 7,
+    1 << 8,
+    1 << 9,
+    1 << 10,
+    1 << 11,
+    1 << 12,
+    1 << 13,
+    1 << 14,
+    1 << 15,
+    1 << 16,
+    1 << 17,
+    1 << 18,
+    1 << 19,
+    1 << 20,
+    1 << 21,
+    1 << 22,
+    1 << 23,
+    1 << 24,
+    1 << 25,
+    1 << 26,
+    1 << 27,
+    1 << 28,
+    1 << 29,
+    1 << 30,
+    1 << 31,
+    1 << 32,
+    1 << 33,
+    1 << 34,
+    1 << 35,
+    1 << 36,
+    1 << 37,
+    1 << 38,
+    1 << 39,
+    1 << 40,
 ];
 
 /// A fixed-point decimal number 128 bits wide
@@ -39,12 +84,11 @@ impl Number128 {
     /// exponent provided.
     pub fn as_u64(&self, exponent: impl Into<i32>) -> u64 {
         let extra_precision = PRECISION + exponent.into();
-        let prec_value = POWERS_OF_TEN[extra_precision.abs() as usize];
 
         let target_value = if extra_precision < 0 {
-            self.0 * prec_value
+            self.0 << extra_precision
         } else {
-            self.0 / prec_value
+            self.0 >> extra_precision
         };
 
         if target_value > std::u64::MAX as i128 {
@@ -167,13 +211,13 @@ impl Mul<Number128> for Number128 {
     type Output = Number128;
 
     fn mul(self, rhs: Number128) -> Self::Output {
-        Self(self.0.checked_mul(rhs.0).unwrap().div(ONE))
+        Self(self.0.checked_mul(rhs.0).unwrap().shr(ONE_SIZE))
     }
 }
 
 impl MulAssign<Number128> for Number128 {
     fn mul_assign(&mut self, rhs: Number128) {
-        self.0 = self.0 * rhs.0 / ONE;
+        self.0 = (self.0 * rhs.0) >> ONE_SIZE;
     }
 }
 
@@ -181,13 +225,13 @@ impl Div<Number128> for Number128 {
     type Output = Number128;
 
     fn div(self, rhs: Number128) -> Self::Output {
-        Self(self.0.mul(ONE).div(rhs.0))
+        Self(self.0.shl(ONE_SIZE).div(rhs.0))
     }
 }
 
 impl DivAssign<Number128> for Number128 {
     fn div_assign(&mut self, rhs: Number128) {
-        self.0 = self.0 * ONE / rhs.0;
+        self.0 = (self.0 << ONE_SIZE) / rhs.0;
     }
 }
 
