@@ -18,7 +18,7 @@ construct_uint! {
 
 pub const BPS_EXPONENT: i32 = -4;
 const PRECISION: i32 = 50;
-const ONE: U192 = U192([1 << PRECISION, 0, 0]);
+const ONE: U192 = U192([1u64 << PRECISION, 0, 0]);
 const U64_MAX: U192 = U192([u64::MAX, 0x0, 0x0]);
 
 /// A large unsigned integer

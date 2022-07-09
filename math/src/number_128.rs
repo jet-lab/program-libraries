@@ -3,7 +3,7 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Shl, Shr, Sub, Su
 use bytemuck::{Pod, Zeroable};
 
 const PRECISION: i32 = 34;
-const ONE: i128 = 1 << PRECISION;
+const ONE: i128 = 1i128 << PRECISION;
 
 const POWERS_OF_TEN: &[i128] = &[
     1,
@@ -38,6 +38,20 @@ impl Number128 {
     /// The precision of the number in the u64 is based on the
     /// exponent provided.
     pub fn from_u64(value: impl Into<u64>, exponent: impl Into<i32>) -> Self {
+        let extra_precision = PRECISION + exponent.into();
+
+        if extra_precision < 0 {
+            Self((value.into() as i128) >> extra_precision)
+        } else {
+            Self((value.into() as i128) << extra_precision)
+        }
+    }
+
+    /// Convert this number into
+    ///
+    /// The precision of the number in the u64 is based on the
+    /// exponent provided.
+    pub fn from_base_2(value: impl Into<i128>, exponent: impl Into<i32>) -> Self {
         let extra_precision = PRECISION + exponent.into();
 
         if extra_precision < 0 {
@@ -100,7 +114,7 @@ impl Number128 {
 
     /// Convert from basis points
     pub fn from_bps(basis_points: u16) -> Self {
-        Self::from_decimal(basis_points, crate::BPS_EXPONENT)
+        Self::from_u64(basis_points, crate::BPS_EXPONENT)
     }
 
     /// Get the underlying 128-bit representation in bytes.
