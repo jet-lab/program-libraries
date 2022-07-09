@@ -152,7 +152,7 @@ impl Number {
 
     /// Convert from basis points into a `Number`
     pub fn from_bps(basis_points: u16) -> Number {
-        Number::from_decimal(basis_points, BPS_EXPONENT)
+        Number::from_u64(basis_points, BPS_EXPONENT)
     }
 
     pub fn pow(&self, exp: impl Into<Number>) -> Number {
