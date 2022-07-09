@@ -17,9 +17,8 @@ construct_uint! {
 }
 
 pub const BPS_EXPONENT: i32 = -4;
-const PRECISION: i32 = 15;
-const ONE_SIZE: i32 = 50;
-const ONE: U192 = U192([1 << ONE_SIZE, 0, 0]);
+const PRECISION: i32 = 50;
+const ONE: U192 = U192([1 << PRECISION, 0, 0]);
 const U64_MAX: U192 = U192([u64::MAX, 0x0, 0x0]);
 
 /// A large unsigned integer
@@ -35,6 +34,20 @@ impl Number {
     pub const MAX: Self = Self(U192([u64::MAX, u64::MAX, u64::MAX]));
     pub const MIN: Self = Self::ZERO;
     pub const BITS: u32 = 192;
+
+    /// Convert this number into
+    ///
+    /// The precision of the number in the u64 is based on the
+    /// exponent provided.
+    pub fn from_u64(value: impl Into<u64>, exponent: impl Into<i32>) -> Self {
+        let extra_precision = PRECISION + exponent.into();
+
+        if extra_precision < 0 {
+            Self(U192::from(value.into()) >> extra_precision)
+        } else {
+            Self(U192::from(value.into()) << extra_precision)
+        }
+    }
 
     /// Convert this number to fit in a u64
     ///
@@ -65,7 +78,7 @@ impl Number {
     /// target precision.
     pub fn as_u64_ceil(&self, exponent: impl Into<i32>) -> u64 {
         let extra_precision = PRECISION + exponent.into();
-        let prec_value = Self::ten_pow(extra_precision.abs() as u32);
+        let prec_value = U192::from(1) << extra_precision;
 
         let target_rounded = prec_value - U192::from(1) + self.0;
         let target_value = if extra_precision < 0 {
@@ -112,14 +125,29 @@ impl Number {
 
     /// Convert another integer into a `Number`.
     pub fn from_decimal(value: impl Into<U192>, exponent: impl Into<i32>) -> Self {
-        let extra_precision = PRECISION + exponent.into();
-        let prec_value = Self::ten_pow(extra_precision.abs() as u32);
+        let precision = exponent.into();
+        let prec_value = Self::ten_pow(precision.abs() as u32);
+        let value_expanded = value.into() << PRECISION;
 
-        if extra_precision < 0 {
-            Self(value.into() / prec_value)
+        if precision < 0 {
+            Self(value_expanded / prec_value)
         } else {
-            Self(value.into() * prec_value)
+            Self(value_expanded * prec_value)
         }
+    }
+
+    /// Convert into a decimal
+    pub fn as_decimal(&self, exponent: impl Into<i32>) -> U192 {
+        let precision = exponent.into();
+        let prec_value = Self::ten_pow(precision.abs() as u32);
+
+        let value = if precision < 0 {
+            self.0 * prec_value
+        } else {
+            self.0 / prec_value
+        };
+
+        value >> PRECISION
     }
 
     /// Convert from basis points into a `Number`
@@ -184,7 +212,7 @@ impl Number {
 
 impl<T: Into<U192>> From<T> for Number {
     fn from(n: T) -> Number {
-        Number(n.into() * ONE)
+        Number(n.into() << PRECISION)
     }
 }
 
@@ -217,7 +245,7 @@ impl Display for Number {
         if self.0 < ONE {
             write!(f, "0.{}", pretty_decimals)?;
         } else {
-            let int = self.0 / ONE;
+            let int = self.0 >> PRECISION;
             write!(f, "{}.{}", int, pretty_decimals)?;
         }
         Ok(())
@@ -265,14 +293,14 @@ impl Mul<Number> for Number {
     type Output = Number;
 
     fn mul(self, rhs: Number) -> Self::Output {
-        Self(self.0.mul(rhs.0) >> ONE_SIZE)
+        Self(self.0.mul(rhs.0) >> PRECISION)
     }
 }
 
 impl MulAssign<Number> for Number {
     fn mul_assign(&mut self, rhs: Number) {
         self.0.mul_assign(rhs.0);
-        self.0.shr_assign(ONE_SIZE);
+        self.0.shr_assign(PRECISION);
     }
 }
 
@@ -280,7 +308,7 @@ impl Div<Number> for Number {
     type Output = Number;
 
     fn div(self, rhs: Number) -> Self::Output {
-        Self((self.0 << ONE_SIZE).div(rhs.0))
+        Self((self.0 << PRECISION).div(rhs.0))
     }
 }
 

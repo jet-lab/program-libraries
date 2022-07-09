@@ -2,9 +2,8 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Shl, Shr, Sub, Su
 
 use bytemuck::{Pod, Zeroable};
 
-const PRECISION: i32 = 10;
-const ONE_SIZE: i32 = 33;
-const ONE: i128 = 1 << ONE_SIZE;
+const PRECISION: i32 = 34;
+const ONE: i128 = 1 << PRECISION;
 
 const POWERS_OF_TEN: &[i128] = &[
     1,
@@ -22,50 +21,6 @@ const POWERS_OF_TEN: &[i128] = &[
     1_000_000_000_000,
 ];
 
-const POWERS_OF_TWO: &[i128] = &[
-    1 << 0,
-    1 << 1,
-    1 << 2,
-    1 << 3,
-    1 << 4,
-    1 << 5,
-    1 << 6,
-    1 << 7,
-    1 << 8,
-    1 << 9,
-    1 << 10,
-    1 << 11,
-    1 << 12,
-    1 << 13,
-    1 << 14,
-    1 << 15,
-    1 << 16,
-    1 << 17,
-    1 << 18,
-    1 << 19,
-    1 << 20,
-    1 << 21,
-    1 << 22,
-    1 << 23,
-    1 << 24,
-    1 << 25,
-    1 << 26,
-    1 << 27,
-    1 << 28,
-    1 << 29,
-    1 << 30,
-    1 << 31,
-    1 << 32,
-    1 << 33,
-    1 << 34,
-    1 << 35,
-    1 << 36,
-    1 << 37,
-    1 << 38,
-    1 << 39,
-    1 << 40,
-];
-
 /// A fixed-point decimal number 128 bits wide
 #[derive(Pod, Zeroable, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(C)]
@@ -77,6 +32,20 @@ impl Number128 {
     pub const MAX: Self = Self(i128::MAX);
     pub const MIN: Self = Self(i128::MIN);
     pub const BITS: u32 = i128::BITS;
+
+    /// Convert this number into
+    ///
+    /// The precision of the number in the u64 is based on the
+    /// exponent provided.
+    pub fn from_u64(value: impl Into<u64>, exponent: impl Into<i32>) -> Self {
+        let extra_precision = PRECISION + exponent.into();
+
+        if extra_precision < 0 {
+            Self((value.into() as i128) >> extra_precision)
+        } else {
+            Self((value.into() as i128) << extra_precision)
+        }
+    }
 
     /// Convert this number to fit in a u64
     ///
@@ -102,16 +71,31 @@ impl Number128 {
         target_value as u64
     }
 
-    /// Convert another integer
+    /// Convert from a decimal
     pub fn from_decimal(value: impl Into<i128>, exponent: impl Into<i32>) -> Self {
-        let extra_precision = PRECISION + exponent.into();
+        let extra_precision = exponent.into();
         let prec_value = POWERS_OF_TEN[extra_precision.abs() as usize];
+        let value_expanded = value.into() << PRECISION;
 
         if extra_precision < 0 {
-            Self(value.into() / prec_value)
+            Self(value_expanded / prec_value)
         } else {
-            Self(value.into() * prec_value)
+            Self(value_expanded * prec_value)
         }
+    }
+
+    /// Convert into a decimal
+    pub fn as_decimal(&self, exponent: impl Into<i32>) -> i128 {
+        let extra_precision = exponent.into();
+        let prec_value = POWERS_OF_TEN[extra_precision.abs() as usize];
+
+        let value = if extra_precision < 0 {
+            self.0 * prec_value
+        } else {
+            self.0 / prec_value
+        };
+
+        value >> PRECISION
     }
 
     /// Convert from basis points
@@ -165,14 +149,14 @@ impl std::fmt::Display for Number128 {
             stripped_decimals
         };
         if self.0 < -ONE {
-            let int = self.0 / ONE;
+            let int = self.0 >> PRECISION;
             write!(f, "{}.{}", int, pretty_decimals)?;
         } else if self.0 < 0 {
             write!(f, "-0.{}", pretty_decimals)?;
         } else if self.0 < ONE {
             write!(f, "0.{}", pretty_decimals)?;
         } else {
-            let int = self.0 / ONE;
+            let int = self.0 >> PRECISION;
             write!(f, "{}.{}", int, pretty_decimals)?;
         }
         Ok(())
@@ -211,13 +195,13 @@ impl Mul<Number128> for Number128 {
     type Output = Number128;
 
     fn mul(self, rhs: Number128) -> Self::Output {
-        Self(self.0.checked_mul(rhs.0).unwrap().shr(ONE_SIZE))
+        Self(self.0.checked_mul(rhs.0).unwrap().shr(PRECISION))
     }
 }
 
 impl MulAssign<Number128> for Number128 {
     fn mul_assign(&mut self, rhs: Number128) {
-        self.0 = (self.0 * rhs.0) >> ONE_SIZE;
+        self.0 = (self.0 * rhs.0) >> PRECISION;
     }
 }
 
@@ -225,13 +209,13 @@ impl Div<Number128> for Number128 {
     type Output = Number128;
 
     fn div(self, rhs: Number128) -> Self::Output {
-        Self(self.0.shl(ONE_SIZE).div(rhs.0))
+        Self(self.0.shl(PRECISION).div(rhs.0))
     }
 }
 
 impl DivAssign<Number128> for Number128 {
     fn div_assign(&mut self, rhs: Number128) {
-        self.0 = (self.0 << ONE_SIZE) / rhs.0;
+        self.0 = (self.0 << PRECISION) / rhs.0;
     }
 }
 
@@ -361,11 +345,13 @@ mod tests {
     }
 
     #[test]
-    fn div_into_i128() {
+    fn div_into_i128_1000_500() {
         let a = Number128::from_decimal(1000, 0);
         let b = a / 500;
         assert_eq!(Number128::from_decimal(2, 0), b);
-
+    }
+    #[test]
+    fn div_into_i128_1000_3333333333_lossy() {
         let c = Number128::from_decimal(1000, -3);
         let d = c / 3;
         assert_eq!(Number128::from_decimal(3333333333i64, -10).0, d.0);
@@ -385,9 +371,20 @@ mod tests {
     #[test]
     fn as_u64() {
         let u64in = 31455;
-        let a = Number128::from_decimal(u64in, -3);
+        let a = Number128::from_u64(u64in, -3);
         let b = a.as_u64(-3);
         assert_eq!(b, u64in);
+    }
+
+    #[test]
+    fn as_decimal_lossy() {
+        let u64in = 31455;
+        let u64out = 31454;
+
+        let a = Number128::from_decimal(u64in, -3);
+        assert_eq!(a.0, 540_392_785_182, "Converting from decimal");
+        let b = a.as_decimal(-3);
+        assert_eq!(b, u64out, "Converting to decimal");
     }
 
     #[test]
@@ -400,7 +397,7 @@ mod tests {
     #[test]
     #[should_panic = "cannot convert to u64 due to overflow"]
     fn as_u64_panic_big() {
-        let a = Number128::from_decimal(u64::MAX as i128 + 1, -3);
+        let a = Number128::from_u64(u64::MAX, -3) + Number128::from_u64(1u64, -3);
         a.as_u64(-3);
     }
 
