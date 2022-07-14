@@ -9,7 +9,7 @@ homepage = "https://jetprotocol.io"
 repository = "https://github.com/jet-lab/program-libraries"
 
 [features]
-traits = []
+traits = ["anchor-lang", "num-traits"]
 
 [dependencies]
 # 0.9 requires rustc 1.56.1+, but bpf is using 1.56.0
@@ -17,6 +17,7 @@ uint = "0.8"
 thiserror = "1.0.20"
 bytemuck = { version = "1.7", features = ["derive"] }
 static_assertions = "1.1.0"
-num-traits = "0.2"
 
-anchor-lang = { git = "https://github.com/jet-lab/anchor", branch = "master" }
+# Traits
+num-traits = { version = "0.2", optional = true }
+anchor-lang = { git = "https://github.com/jet-lab/anchor", optional = true, branch = "master" }
