@@ -300,28 +300,28 @@ impl Sum for Number {
 #[cfg(feature = "traits")]
 impl num_traits::CheckedAdd for Number {
     fn checked_add(&self, v: &Self) -> Option<Self> {
-        self.0.checked_add(v.0).map(|n| n.into())
+        self.0.checked_add(v.0).map(Number)
     }
 }
 
 #[cfg(feature = "traits")]
 impl num_traits::CheckedDiv for Number {
     fn checked_div(&self, v: &Self) -> Option<Self> {
-        self.0.checked_div(v.0).map(|n| n.into())
+        self.0.checked_div(v.0).map(Number)
     }
 }
 
 #[cfg(feature = "traits")]
 impl num_traits::CheckedMul for Number {
     fn checked_mul(&self, v: &Self) -> Option<Self> {
-        self.0.checked_mul(v.0).map(|n| n.into())
+        self.0.checked_mul(v.0).map(Number)
     }
 }
 
 #[cfg(feature = "traits")]
 impl num_traits::CheckedSub for Number {
     fn checked_sub(&self, v: &Self) -> Option<Self> {
-        self.0.checked_sub(v.0).map(|n| n.into())
+        self.0.checked_sub(v.0).map(Number)
     }
 }
 
