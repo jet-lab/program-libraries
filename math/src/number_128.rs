@@ -207,6 +207,40 @@ impl<T: Into<i128>> Div<T> for Number128 {
     }
 }
 
+impl<T: Into<i128>> From<T> for Number128 {
+    fn from(n: T) -> Self {
+        Self::from_i128(n.into())
+    }
+}
+
+#[cfg(feature = "traits")]
+impl num_traits::CheckedAdd for Number128 {
+    fn checked_add(&self, v: &Self) -> Option<Self> {
+        self.0.checked_add(v.0).map(|n| n.into())
+    }
+}
+
+#[cfg(feature = "traits")]
+impl num_traits::CheckedDiv for Number128 {
+    fn checked_div(&self, v: &Self) -> Option<Self> {
+        self.0.checked_div(v.0).map(|n| n.into())
+    }
+}
+
+#[cfg(feature = "traits")]
+impl num_traits::CheckedMul for Number128 {
+    fn checked_mul(&self, v: &Self) -> Option<Self> {
+        self.0.checked_mul(v.0).map(|n| n.into())
+    }
+}
+
+#[cfg(feature = "traits")]
+impl num_traits::CheckedSub for Number128 {
+    fn checked_sub(&self, v: &Self) -> Option<Self> {
+        self.0.checked_sub(v.0).map(|n| n.into())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

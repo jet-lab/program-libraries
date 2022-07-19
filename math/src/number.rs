@@ -191,7 +191,7 @@ impl<T: Into<U192>> From<T> for Number {
 
 impl From<Number> for [u8; 24] {
     fn from(n: Number) -> Self {
-        n.0.into()
+        n.into_bits()
     }
 }
 
@@ -307,6 +307,34 @@ impl Sum for Number {
     }
 }
 
+#[cfg(feature = "traits")]
+impl num_traits::CheckedAdd for Number {
+    fn checked_add(&self, v: &Self) -> Option<Self> {
+        self.0.checked_add(v.0).map(Number)
+    }
+}
+
+#[cfg(feature = "traits")]
+impl num_traits::CheckedDiv for Number {
+    fn checked_div(&self, v: &Self) -> Option<Self> {
+        self.0.checked_div(v.0).map(Number)
+    }
+}
+
+#[cfg(feature = "traits")]
+impl num_traits::CheckedMul for Number {
+    fn checked_mul(&self, v: &Self) -> Option<Self> {
+        self.0.checked_mul(v.0).map(Number)
+    }
+}
+
+#[cfg(feature = "traits")]
+impl num_traits::CheckedSub for Number {
+    fn checked_sub(&self, v: &Self) -> Option<Self> {
+        self.0.checked_sub(v.0).map(Number)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -393,5 +421,14 @@ mod tests {
         let number = Number::from_bits(bits);
 
         assert_eq!(Number::from_decimal(1242, -3), number);
+    }
+
+    #[test]
+    fn from_bits() {
+        let bits: [u8; 24] = {
+            let number: Number = 100.into();
+            number.into()
+        };
+        assert_eq!(Number::from_decimal(100, 0).into_bits(), bits);
     }
 }
