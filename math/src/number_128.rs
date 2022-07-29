@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign, Neg};
 
 use bytemuck::{Pod, Zeroable};
 
@@ -241,6 +241,14 @@ impl num_traits::CheckedSub for Number128 {
     }
 }
 
+impl Neg for Number128 {
+    type Output = Number128;
+
+    fn neg(self) -> Self::Output {
+        Number128(-self.0)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -253,6 +261,11 @@ mod tests {
     #[test]
     fn one_equals_one() {
         assert_eq!(Number128::ONE, Number128::from_decimal(1, 0));
+    }
+
+    #[test]
+    fn negative_one_equals_negative_one() {
+        assert_eq!(-Number128::ONE, Number128::from_decimal(-1, 0));
     }
 
     #[test]
