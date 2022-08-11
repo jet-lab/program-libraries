@@ -58,6 +58,12 @@ impl Number128 {
         target_value as u64
     }
 
+    /// Convert this number to a f64
+    pub fn as_f64(&self) -> f64 {
+        // i128::{MAX|MIN} fits within f64
+        self.to_i128() as f64 / 10_000_000_000.0
+    }
+
     /// Convert another integer
     pub fn from_decimal(value: impl Into<i128>, exponent: impl Into<i32>) -> Self {
         let extra_precision = PRECISION + exponent.into();
@@ -405,6 +411,45 @@ mod tests {
     fn as_u64_panic_big() {
         let a = Number128::from_decimal(u64::MAX as i128 + 1, -3);
         a.as_u64(-3);
+    }
+
+    #[test]
+    fn as_f64() {
+        let n = Number128::from_bps(15000);
+        assert_eq!(1.5, n.as_f64());
+
+        // Test that conversion is within bounds and doesn't lose precision for min
+        let n = Number128::MIN; // -170141183460469231731687303715884105728
+        assert_eq!(-17014118346046923173168730371.5884105728, n.as_f64());
+
+        // Test that conversion is within bounds and doesn't lose precision for max
+        let n = Number128::MAX; // 170141183460469231731687303715884105727
+        assert_eq!(17014118346046923173168730371.5884105727, n.as_f64());
+
+        // More cases
+        let n = Number128::from_bps(0) - Number128::from_bps(15000);
+        assert_eq!(-1.5, n.as_f64());
+
+        let n = Number128::from_decimal(12345678901i128, -10);
+        assert_eq!(1.2345678901, n.as_f64());
+
+        let n = Number128::from_decimal(-12345678901i128, -10);
+        assert_eq!(-1.2345678901, n.as_f64());
+
+        let n = Number128::from_decimal(-12345678901i128, -9);
+        assert_eq!(-12.345678901, n.as_f64());
+
+        let n = Number128::from_decimal(12345678901i128, -9);
+        assert_eq!(12.345678901, n.as_f64());
+
+        let n = Number128::from_decimal(ONE - 1, 1);
+        assert_eq!(99999999990.0, n.as_f64());
+
+        let n = Number128::from_decimal(12345678901i128, -13);
+        assert_eq!(0.0012345678, n.as_f64());
+
+        let n = Number128::from_decimal(-12345678901i128, -13);
+        assert_eq!(-0.0012345678, n.as_f64());
     }
 
     #[test]
