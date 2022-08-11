@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign, Neg};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use bytemuck::{Pod, Zeroable};
 
@@ -39,7 +39,7 @@ impl Number128 {
     /// exponent provided.
     pub fn as_u64(&self, exponent: impl Into<i32>) -> u64 {
         let extra_precision = PRECISION + exponent.into();
-        let prec_value = POWERS_OF_TEN[extra_precision.abs() as usize];
+        let prec_value = POWERS_OF_TEN[extra_precision.unsigned_abs() as usize];
 
         let target_value = if extra_precision < 0 {
             self.0 * prec_value
@@ -67,7 +67,7 @@ impl Number128 {
     /// Convert another integer
     pub fn from_decimal(value: impl Into<i128>, exponent: impl Into<i32>) -> Self {
         let extra_precision = PRECISION + exponent.into();
-        let prec_value = POWERS_OF_TEN[extra_precision.abs() as usize];
+        let prec_value = POWERS_OF_TEN[extra_precision.unsigned_abs() as usize];
 
         if extra_precision < 0 {
             Self(value.into() / prec_value)
@@ -107,7 +107,7 @@ impl Number128 {
 
 impl std::fmt::Debug for Number128 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        <Self as std::fmt::Display>::fmt(&self, f)
+        <Self as std::fmt::Display>::fmt(self, f)
     }
 }
 

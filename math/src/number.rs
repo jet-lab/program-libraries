@@ -41,7 +41,7 @@ impl Number {
     /// exponent provided.
     pub fn as_u64(&self, exponent: impl Into<i32>) -> u64 {
         let extra_precision = PRECISION + exponent.into();
-        let prec_value = Self::ten_pow(extra_precision.abs() as u32);
+        let prec_value = Self::ten_pow(extra_precision.unsigned_abs());
 
         let target_value = if extra_precision < 0 {
             self.0 * prec_value
@@ -65,7 +65,7 @@ impl Number {
     /// target precision.
     pub fn as_u64_ceil(&self, exponent: impl Into<i32>) -> u64 {
         let extra_precision = PRECISION + exponent.into();
-        let prec_value = Self::ten_pow(extra_precision.abs() as u32);
+        let prec_value = Self::ten_pow(extra_precision.unsigned_abs());
 
         let target_rounded = prec_value - U192::from(1) + self.0;
         let target_value = if extra_precision < 0 {
@@ -90,7 +90,7 @@ impl Number {
     /// target precision.
     pub fn as_u64_rounded(&self, exponent: impl Into<i32>) -> u64 {
         let extra_precision = PRECISION + exponent.into();
-        let prec_value = Self::ten_pow(extra_precision.abs() as u32);
+        let prec_value = Self::ten_pow(extra_precision.unsigned_abs());
 
         let rounding = match extra_precision > 0 {
             true => U192::from(1) * prec_value / 2,
@@ -114,7 +114,7 @@ impl Number {
     /// Convert another integer into a `Number`.
     pub fn from_decimal(value: impl Into<U192>, exponent: impl Into<i32>) -> Self {
         let extra_precision = PRECISION + exponent.into();
-        let prec_value = Self::ten_pow(extra_precision.abs() as u32);
+        let prec_value = Self::ten_pow(extra_precision.unsigned_abs());
 
         if extra_precision < 0 {
             Self(value.into() / prec_value)
@@ -197,7 +197,7 @@ impl From<Number> for [u8; 24] {
 
 impl Debug for Number {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        <Self as Display>::fmt(&self, f)
+        <Self as Display>::fmt(self, f)
     }
 }
 
