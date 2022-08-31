@@ -10,6 +10,7 @@ repository = "https://github.com/jet-lab/program-libraries"
 
 [features]
 traits = ["anchor-lang", "num-traits"]
+fixed-point = []
 
 [dependencies]
 uint = "0.9"
