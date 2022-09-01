@@ -36,6 +36,16 @@ impl Fp32 {
             Some(self.0 as u64)
         }
     }
+
+    /// multiplies self with rhs yielding a u64
+    pub fn u64_mul(&self, rhs: u64) -> Option<u64> {
+        (*self * rhs).as_u64()
+    }
+
+    /// divides self with rhs yielding a u64
+    pub fn u64_div(&self, rhs: u64) -> Option<u64> {
+        (*self / rhs).as_u64()
+    }
 }
 
 impl<T: Into<u128>> From<T> for Fp32 {
@@ -200,42 +210,19 @@ mod tests {
         a.as_u64().unwrap();
     }
 
-    // #[test]
-    // fn as_f64() {
-    //     let n = Number128::from_bps(15000);
-    //     assert_eq!(1.5, n.as_f64());
+    #[test]
+    fn u64_mul() {
+        let a = 100u64;
+        let fp = Fp32::from(10u64);
 
-    //     // Test that conversion is within bounds and doesn't lose precision for min
-    //     let n = Number128::MIN; // -170141183460469231731687303715884105728
-    //     assert_eq!(-17014118346046923173168730371.5884105728, n.as_f64());
+        assert_eq!(fp.u64_mul(a).unwrap(), 1_000);
+    }
 
-    //     // Test that conversion is within bounds and doesn't lose precision for max
-    //     let n = Number128::MAX; // 170141183460469231731687303715884105727
-    //     assert_eq!(17014118346046923173168730371.5884105727, n.as_f64());
+    #[test]
+    fn u64_div() {
+        let a = 10u64;
+        let fp = Fp32::from(100u64);
 
-    //     // More cases
-    //     let n = Number128::from_bps(0) - Number128::from_bps(15000);
-    //     assert_eq!(-1.5, n.as_f64());
-
-    //     let n = Number128::from_decimal(12345678901i128, -10);
-    //     assert_eq!(1.2345678901, n.as_f64());
-
-    //     let n = Number128::from_decimal(-12345678901i128, -10);
-    //     assert_eq!(-1.2345678901, n.as_f64());
-
-    //     let n = Number128::from_decimal(-12345678901i128, -9);
-    //     assert_eq!(-12.345678901, n.as_f64());
-
-    //     let n = Number128::from_decimal(12345678901i128, -9);
-    //     assert_eq!(12.345678901, n.as_f64());
-
-    //     let n = Number128::from_decimal(ONE - 1, 1);
-    //     assert_eq!(99999999990.0, n.as_f64());
-
-    //     let n = Number128::from_decimal(12345678901i128, -13);
-    //     assert_eq!(0.0012345678, n.as_f64());
-
-    //     let n = Number128::from_decimal(-12345678901i128, -13);
-    //     assert_eq!(-0.0012345678, n.as_f64());
-    // }
+        assert_eq!(fp.u64_div(a).unwrap(), 10u64)
+    }
 }
