@@ -27,6 +27,15 @@ impl Fp32 {
         let add_one = (!(self.0 as u32)).wrapping_add(1) as u128;
         self.0.checked_add(add_one).and_then(|n| Self(n).as_u64())
     }
+
+    /// Keeps representation as a fixed-point 32 number
+    pub fn downcast_u64(self) -> Option<u64> {
+        if self.0 > u64::MAX as u128 {
+            None
+        } else {
+            Some(self.0 as u64)
+        }
+    }
 }
 
 impl<T: Into<u128>> From<T> for Fp32 {
