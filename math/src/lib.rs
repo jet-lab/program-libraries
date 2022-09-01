@@ -1,5 +1,8 @@
+#[cfg(not(feature = "fixed-point"))]
 mod functions;
+#[cfg(not(feature = "fixed-point"))]
 mod number;
+#[cfg(not(feature = "fixed-point"))]
 mod number_128;
 
 #[cfg(feature = "traits")]
