@@ -23,7 +23,7 @@ impl Fp32 {
         }
     }
 
-    pub fn as_u64_ciel(self) -> Option<u64> {
+    pub fn as_u64_ceil(self) -> Option<u64> {
         let add_one = (!(self.0 as u32)).wrapping_add(1) as u128;
         self.0.checked_add(add_one).and_then(|n| Self(n).as_u64())
     }
