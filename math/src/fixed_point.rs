@@ -46,6 +46,11 @@ impl Fp32 {
     pub fn u64_div(&self, rhs: u64) -> Option<u64> {
         (*self / rhs).as_u64()
     }
+
+    /// upcasts and wraps an existing 64-bit fp32
+    pub fn upcast_fp32(fp: u64) -> Self {
+        Self(fp as u128)
+    }
 }
 
 impl<T: Into<u128>> From<T> for Fp32 {
@@ -224,5 +229,13 @@ mod tests {
         let fp = Fp32::from(100u64);
 
         assert_eq!(fp.u64_div(a).unwrap(), 10u64)
+    }
+
+    #[test]
+    fn up_and_downcasting() {
+        let fp32_u64 = 10 * (FP32_ONE as u64);
+        let up = Fp32::upcast_fp32(fp32_u64);
+
+        assert_eq!(up.downcast_u64().unwrap(), fp32_u64);
     }
 }
