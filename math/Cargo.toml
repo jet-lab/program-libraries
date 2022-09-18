@@ -13,7 +13,7 @@ full = ["number", "number-128", "traits", "fixed-point"]
 number = ["bytemuck", "thiserror", "uint", "static_assertions"]
 number-128 = ["bytemuck"]
 traits = ["anchor-lang", "num-traits"]
-fixed-point = []
+fixed-point = ["bytemuck"]
 
 [dependencies]
 uint = { version = "0.9", optional = true }
