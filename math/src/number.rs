@@ -20,6 +20,7 @@ pub const BPS_EXPONENT: i32 = -4;
 const PRECISION: i32 = 15;
 const ONE: U192 = U192([1_000_000_000_000_000, 0, 0]);
 const U64_MAX: U192 = U192([u64::MAX, 0x0, 0x0]);
+const U128_MAX: U192 = U192([u64::MAX, u64::MAX, 0x0]);
 
 /// A large unsigned integer
 #[derive(Pod, Zeroable, Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
@@ -109,6 +110,27 @@ impl Number {
         }
 
         target_value.as_u64()
+    }
+
+    /// Convert this number to fit in a u128
+    ///
+    /// The precision of the number in the u128 is based on the
+    /// exponent provided.
+    pub fn as_u128(&self, exponent: impl Into<i32>) -> u128 {
+        let extra_precision = PRECISION + exponent.into();
+        let prec_value = Self::ten_pow(extra_precision.unsigned_abs());
+
+        let target_value = if extra_precision < 0 {
+            self.0 * prec_value
+        } else {
+            self.0 / prec_value
+        };
+
+        if target_value > U128_MAX {
+            panic!("cannot convert to u128 due to overflow");
+        }
+
+        target_value.as_u128()
     }
 
     /// Convert another integer into a `Number`.

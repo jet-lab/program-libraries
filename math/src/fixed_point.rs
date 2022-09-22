@@ -14,7 +14,13 @@ impl Fp32 {
     pub const MAX: Self = Self(u128::MAX);
     pub const MIN: Self = Self(u128::MIN);
 
-    pub fn as_u64(self) -> Option<u64> {
+    /// wraps a u128 value without any logical conversions
+    pub fn wrap_u128(n: u128) -> Self {
+        Self(n)
+    }
+
+    /// returns fixed-point to decimal representation
+    pub fn as_decimal_u64(self) -> Option<u64> {
         let res = self.0 / Self::ONE.0;
         if res > u64::MAX as u128 {
             None
@@ -23,9 +29,12 @@ impl Fp32 {
         }
     }
 
-    pub fn as_u64_ceil(self) -> Option<u64> {
+    /// returns fixed-point to decimal representation, rounded up
+    pub fn as_decimal_u64_ceil(self) -> Option<u64> {
         let add_one = (!(self.0 as u32)).wrapping_add(1) as u128;
-        self.0.checked_add(add_one).and_then(|n| Self(n).as_u64())
+        self.0
+            .checked_add(add_one)
+            .and_then(|n| Self(n).as_decimal_u64())
     }
 
     /// Keeps representation as a fixed-point 32 number
@@ -37,14 +46,14 @@ impl Fp32 {
         }
     }
 
-    /// multiplies self with rhs yielding a u64
-    pub fn u64_mul(&self, rhs: u64) -> Option<u64> {
-        (*self * rhs).as_u64()
+    /// multiplies self with rhs yielding a decimal u64
+    pub fn decimal_u64_mul(&self, rhs: u64) -> Option<u64> {
+        (*self * rhs).as_decimal_u64()
     }
 
     /// divides self with rhs yielding a u64
     pub fn u64_div(&self, rhs: u64) -> Option<u64> {
-        (*self / rhs).as_u64()
+        (*self / rhs).as_decimal_u64()
     }
 
     /// upcasts and wraps an existing 64-bit fp32
