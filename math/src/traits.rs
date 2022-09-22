@@ -1,7 +1,7 @@
 use anchor_lang::{error, error_code, prelude::Result};
 use num_traits::{CheckedAdd, CheckedDiv, CheckedMul, CheckedSub};
 
-use crate::{Number, U192};
+use crate::number::{Number, U192};
 
 #[error_code]
 pub enum NumericalError {

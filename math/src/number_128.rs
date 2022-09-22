@@ -78,7 +78,7 @@ impl Number128 {
 
     /// Convert from basis points
     pub fn from_bps(basis_points: u16) -> Self {
-        Self::from_decimal(basis_points, crate::BPS_EXPONENT)
+        Self::from_decimal(basis_points, crate::number::BPS_EXPONENT)
     }
 
     /// Get the underlying 128-bit representation in bytes.

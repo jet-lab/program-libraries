@@ -9,13 +9,17 @@ homepage = "https://jetprotocol.io"
 repository = "https://github.com/jet-lab/program-libraries"
 
 [features]
-traits = ["anchor-lang", "num-traits"]
+full = ["number", "number-128", "traits", "fixed-point"]
+number = ["bytemuck", "thiserror", "uint", "static_assertions"]
+number-128 = ["bytemuck"]
+traits = ["number", "anchor-lang", "num-traits"]
+fixed-point = ["bytemuck"]
 
 [dependencies]
-uint = "0.9"
-thiserror = "1.0.20"
-bytemuck = { version = "1.7", features = ["derive"] }
-static_assertions = "1.1.0"
+uint = { version = "0.9", optional = true }
+thiserror = { version = "1.0.20", optional = true }
+bytemuck = { version = "1.7", features = ["derive"], optional = true }
+static_assertions = { version = "1.1.0", optional = true }
 
 # Traits
 num-traits = { version = "0.2", optional = true }

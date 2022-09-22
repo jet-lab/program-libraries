@@ -1,15 +1,12 @@
-mod functions;
-mod number;
-mod number_128;
+#[cfg(feature = "number")]
+pub mod functions;
+#[cfg(feature = "number")]
+pub mod number;
+#[cfg(feature = "number-128")]
+pub mod number_128;
 
 #[cfg(feature = "traits")]
 pub mod traits;
 
-#[doc(inline)]
-pub use functions::*;
-
-#[doc(inline)]
-pub use number::*;
-
-#[doc(inline)]
-pub use number_128::*;
+#[cfg(feature = "fixed-point")]
+pub mod fixed_point;
