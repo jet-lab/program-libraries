@@ -23,4 +23,4 @@ static_assertions = { version = "1.1.0", optional = true }
 
 # Traits
 num-traits = { version = "0.2", optional = true }
-anchor-lang = { git = "https://github.com/jet-lab/anchor", optional = true, branch = "master" }
+anchor-lang = { git = "https://github.com/jet-lab/anchor", optional = true, branch = "temp-version-bump-1-11" }
